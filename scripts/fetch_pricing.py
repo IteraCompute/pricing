@@ -16,6 +16,10 @@ def per_m(price) -> float:
     return float(price) * 1_000_000
 
 
+def price_cell(price) -> str:
+    return "N/A" if price is None else f"${per_m(price):.2f}"
+
+
 def main() -> None:
     with urllib.request.urlopen(URL, timeout=30) as r:
         data = json.load(r)["data"]
@@ -30,15 +34,15 @@ def main() -> None:
                 for im in m.get("input_modalities", [])
                 if "max_context_length" in im.get("supported_inputs", {})
             ),
-            0,
+            None,
         )
         out = next(
             (
-                om.get("max_length", {}).get("value", 0)
+                om.get("max_length", {}).get("value")
                 for om in m.get("output_modalities", [])
                 if om.get("type") == "text"
             ),
-            0,
+            None,
         )
         prices = {
             p["type"]: p["cost_usd"]
@@ -57,11 +61,11 @@ def main() -> None:
             [
                 mid,
                 quant,
-                f"{ctx:,}",
-                f"${per_m(prices.get('prompt', 0)):.2f}",
-                f"${per_m(prices.get('cached_prompt', 0)):.2f}",
-                f"${per_m(op.get('completion', 0)):.2f}",
-                f"{out:,}",
+                "N/A" if ctx is None else f"{ctx:,}",
+                price_cell(prices.get('prompt')),
+                price_cell(prices.get('cached_prompt')),
+                price_cell(op.get('completion')),
+                "N/A" if out is None else f"{out:,}",
             ]
         )
 
